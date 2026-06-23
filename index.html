@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detektiv Suche - Mission: Fake News</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <audio id="bg-music" loop>
+    <source src="music.mp3" type="audio/mpeg" />
+  </audio>
+
+  <nav class="navbar">
+    <button class="nav-home" onclick="location.reload()" aria-label="Zur Startseite">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      <span>Startseite</span>
+    </button>
+
+    <div class="nav-right">
+      <button id="music-toggle" class="icon-btn" aria-label="Musik an oder aus">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      </button>
+      <img src="logo.png" alt="Logo Detektiv Suche" class="nav-logo" onerror="this.style.display='none'" />
+    </div>
+  </nav>
+
+  <header class="hero" id="hero">
+    <img src="header-bg.png" alt="Detektiv Nova im Büro" class="hero-bg" onerror="this.style.display='none'" />
+    <div class="hero-overlay"></div>
+    <div class="hero-card">
+      <p class="hero-kicker">Mission gegen Desinformation</p>
+      <h1>MISSION: FAKE NEWS</h1>
+      <h2>Die Akten der Wahrheit</h2>
+      <p>
+        Untersuche Hinweise, entlarve Tricks und lerne mit Detektiv Nova,
+        wie man Fake News erkennt, prüft und stoppt.
+      </p>
+    </div>
+  </header>
+
+  <main class="page" id="main-container">
+    <section class="definition-section card" id="definition-section">
+      <div class="definition-copy">
+        <h3>Was sind Fake News überhaupt?</h3>
+        <p>
+          <strong>Fake News</strong> sind absichtlich erfundene oder manipulierte
+          Informationen. Sie sehen oft glaubwürdig aus, sollen aber in Wahrheit
+          Angst auslösen, Menschen beeinflussen oder möglichst oft geteilt werden.
+        </p>
+        <div class="warning-line">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 9v5"/><circle cx="12" cy="17" r="1"/></svg>
+          <span><strong>Die Gefahr:</strong> Falschmeldungen verbreiten sich schnell, schieben Emotionen an und machen es schwerer, Fakten von Meinung zu trennen.</span>
+        </div>
+      </div>
+      <div class="definition-visual" aria-hidden="true">
+        <div class="news-wall lens-only">
+          <div class="mini-lens"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="why-important card" id="why-important">
+      <h3>Dein Training: Wie dir diese Seite hilft</h3>
+      <div class="features-grid">
+        <article class="feature-card">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          <h4>Manipulation erkennen</h4>
+          <p>Du lernst, wie Schlagzeilen, Bilder und Emotionen gezielt eingesetzt werden.</p>
+        </article>
+        <article class="feature-card">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <h4>Sicher reagieren</h4>
+          <p>Du bekommst Strategien, wie du nicht sofort weiterleitest, sondern erst prüfst.</p>
+        </article>
+        <article class="feature-card">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14l-3-3"/></svg>
+          <h4>Faktencheck nutzen</h4>
+          <p>Du lernst hilfreiche Anlaufstellen kennen, z. B. Correctiv, Mimikama und den ARD-Faktenfinder.</p>
+        </article>
+      </div>
+    </section>
+
+
+
+    <section class="quick-check card intro-extra" id="quick-check">
+      <div class="section-intro">
+        <p class="eyebrow">5-Sekunden-Check</p>
+        <h3>Bevor du etwas teilst</h3>
+        <p>Diese kurze Checkliste hilft dir, verdächtige Beiträge schnell einzuordnen.</p>
+      </div>
+      <div class="quick-check-grid">
+        <article><span>1</span><strong>Quelle</strong><p>Wer steckt hinter der Meldung?</p></article>
+        <article><span>2</span><strong>Datum</strong><p>Ist der Beitrag aktuell oder aus dem Kontext gerissen?</p></article>
+        <article><span>3</span><strong>Emotion</strong><p>Sollst du ruhig informiert oder aufgeregt werden?</p></article>
+        <article><span>4</span><strong>Bild</strong><p>Passt das Bild wirklich zur Geschichte?</p></article>
+        <article><span>5</span><strong>Vergleich</strong><p>Berichten auch andere verlässliche Quellen?</p></article>
+      </div>
+    </section>
+
+    <section class="pattern-section card intro-extra" id="pattern-section">
+      <div class="section-intro">
+        <p class="eyebrow">Typische Muster</p>
+        <h3>Woran Fake News oft auffallen</h3>
+        <p>Fake News sehen unterschiedlich aus, nutzen aber oft ähnliche Tricks.</p>
+      </div>
+      <div class="pattern-grid">
+        <article class="pattern-card pattern-alert"><div></div><h4>Reißerische Überschrift</h4><p>Große Worte, viele Ausrufezeichen und starke Emotionen.</p></article>
+        <article class="pattern-card pattern-source"><div></div><h4>Unklare Quelle</h4><p>Kein Impressum, unbekannte Seite oder nachgemachte Namen.</p></article>
+        <article class="pattern-card pattern-context"><div></div><h4>Alter Kontext</h4><p>Ein altes Bild wird so gezeigt, als wäre es gerade passiert.</p></article>
+        <article class="pattern-card pattern-share"><div></div><h4>Teilen-Druck</h4><p>Formulierungen wie „sofort weiterleiten“ sollen dich antreiben.</p></article>
+      </div>
+    </section>
+
+    <section class="spread-section card intro-extra" id="spread-section">
+      <div class="section-intro">
+        <p class="eyebrow">Verbreitungsweg</p>
+        <h3>Wie eine Falschmeldung groß wird</h3>
+        <p>Eine Fake News verbreitet sich oft nicht auf einmal, sondern Schritt für Schritt.</p>
+      </div>
+      <div class="spread-road visual-road" aria-label="Verbreitungsweg von Fake News">
+        <div class="spread-step">
+          <span class="spread-icon post-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64"><rect x="16" y="10" width="32" height="44" rx="7"/><circle cx="26" cy="22" r="3"/><path d="M25 32h20M25 40h20M25 48h14"/></svg>
+          </span>
+          <strong>Post</strong>
+          <p>Eine Behauptung taucht auf.</p>
+        </div>
+        <div class="spread-step">
+          <span class="spread-icon emotion-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64"><path d="M15 18h34a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H30l-12 8v-8h-3a8 8 0 0 1-8-8V26a8 8 0 0 1 8-8z"/><circle cx="24" cy="32" r="3"/><circle cx="34" cy="32" r="3"/><circle cx="44" cy="32" r="3"/></svg>
+          </span>
+          <strong>Emotion</strong>
+          <p>Menschen reagieren wütend oder ängstlich.</p>
+        </div>
+        <div class="spread-step">
+          <span class="spread-icon reach-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64"><circle cx="20" cy="21" r="7"/><circle cx="45" cy="25" r="7"/><circle cx="33" cy="45" r="8"/><path d="M26 24l12 2M24 27l6 12M42 32l-6 7"/></svg>
+          </span>
+          <strong>Reichweite</strong>
+          <p>Likes und Kommentare schieben den Beitrag weiter.</p>
+        </div>
+        <div class="spread-step">
+          <span class="spread-icon share-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64"><rect x="11" y="17" width="32" height="28" rx="7"/><path d="M43 27h5a7 7 0 0 1 7 7v13a7 7 0 0 1-7 7H29a7 7 0 0 1-7-7v-2"/><path d="M34 24l10 8-10 8M44 32H25"/></svg>
+          </span>
+          <strong>Weiterleitung</strong>
+          <p>Der Beitrag landet in Chats und Gruppen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="nova-profile card">
+      <img src="nova-profile.png" alt="Steckbrief von Detektiv Nova" class="nova-profile-image" onerror="this.style.display='none'" />
+    </section>
+
+    <div class="start-area">
+      <button id="start-btn" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Spiel starten
+      </button>
+    </div>
+
+
+
+    <section class="intro-video-section card hidden" id="intro-video-section">
+      <div class="section-intro intro-video-copy">
+        <p class="eyebrow">Intro-Mission</p>
+        <h3>Nova braucht deine Hilfe</h3>
+        <p>Sieh dir zuerst die kurze Anfangsszene an. Danach startet die erste Akte.</p>
+      </div>
+      <div class="intro-video-frame">
+        <video id="intro-video" class="intro-video" controls playsinline preload="metadata">
+          <source src="video_einstieg.mp4" type="video/mp4" />
+          Dein Browser kann dieses Video leider nicht abspielen. Lege die Datei <strong>video_einstieg.mp4</strong> in denselben Ordner wie die Webseite.
+        </video>
+      </div>
+      <div class="intro-video-actions">
+        <button id="first-case-btn" class="btn btn-primary">
+          Zum ersten Fall
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="quiz-section hidden" id="quiz-section">
+      <div class="progress-wrapper">
+        <div class="progress-track">
+          <div id="progress-fill" class="progress-fill"></div>
+          <div id="progress-icon" class="progress-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m21 21-6-6"/></svg>
+          </div>
+        </div>
+        <div class="progress-label">Auf dem Weg zum Meister-Detektiv</div>
+      </div>
+
+      <div class="akte-folder">
+        <div class="akte-tab">FALL <span id="akte-number">1/10</span></div>
+        <div class="akte-sheet">
+          <div class="akte-header">
+            <button id="prev-btn" class="icon-btn hidden" aria-label="Vorherige Akte">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+            </button>
+            <h3 id="akte-title">Akte</h3>
+          </div>
+
+          <div class="nova-dialog" id="nova-dialog-box">
+            <img src="nova-avatar.png" alt="Nova" class="nova-avatar" onerror="this.style.display='none'" />
+            <div class="nova-speech">
+              <p id="nova-dialog"></p>
+            </div>
+          </div>
+
+          <div id="evidence-container" class="evidence-box"></div>
+          <p id="question-text" class="question"></p>
+          <div id="interaction-container" class="interaction-container"></div>
+
+          <div id="learning-block" class="learning-card hidden">
+            <h4 id="learning-title"></h4>
+            <p id="learning-text"></p>
+            <button id="next-btn" class="btn btn-primary full-btn">
+              Nächste Akte
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="result-section hidden" id="result-section">
+    <div class="result-card result-card-header">
+      <img src="outro-nova-fixed.png" alt="Detektiv Nova nach der erfolgreich gelösten Mission" class="result-image result-header-image" onerror="this.style.display='none'" />
+      <div class="result-copy">
+        <h2>Herzlichen Glückwunsch!</h2>
+        <h3>Du bist jetzt zertifizierter Meister-Detektiv.</h3>
+        <p>
+          Du hast 10 Fälle gelöst, Hinweise kombiniert und gelernt, wie man
+          verdächtige Quellen, manipulative Sprache und irreführende Bilder entlarvt.
+        </p>
+      </div>
+    </div>
+
+    <div class="checklist-card">
+      <div class="print-title">
+        <p class="eyebrow">Dein Spickzettel gegen Desinformation</p>
+        <h3>Fake-News-Checkliste für den Alltag</h3>
+        <p>Diese Zusammenfassung kannst du als PDF speichern und später beim Prüfen von Beiträgen wieder nutzen.</p>
+      </div>
+
+      <div class="final-summary-grid">
+        <section class="summary-box summary-main">
+          <h4>5-Sekunden-Check vor dem Teilen</h4>
+          <ol class="number-checklist">
+            <li><strong>Quelle:</strong> Wer steckt hinter der Meldung?</li>
+            <li><strong>Datum:</strong> Ist der Beitrag aktuell oder aus dem Kontext gerissen?</li>
+            <li><strong>Emotion:</strong> Sollst du informiert oder aufgeregt werden?</li>
+            <li><strong>Bild:</strong> Passt das Bild wirklich zur Geschichte?</li>
+            <li><strong>Vergleich:</strong> Berichten auch andere verlässliche Quellen?</li>
+          </ol>
+        </section>
+
+        <section class="summary-box">
+          <h4>Typische Muster von Fake News</h4>
+          <ul class="final-checklist compact-list">
+            <li>Reißerische Überschriften mit starken Emotionen.</li>
+            <li>Unklare Quelle, fehlendes Impressum oder nachgemachte Namen.</li>
+            <li>Alte Bilder oder Aussagen in einem neuen Kontext.</li>
+            <li>Teilen-Druck wie „sofort weiterleiten“.</li>
+            <li>Übertriebene Behauptungen ohne echte Belege.</li>
+          </ul>
+        </section>
+
+        <section class="summary-box">
+          <h4>So verbreitet sich eine Falschmeldung</h4>
+          <div class="mini-spread-line" aria-label="Post, Emotion, Reichweite, Weiterleitung">
+            <span>Post</span>
+            <span>Emotion</span>
+            <span>Reichweite</span>
+            <span>Weiterleitung</span>
+          </div>
+          <p>Starke Gefühle sorgen für Reaktionen. Dadurch bekommt der Beitrag mehr Sichtbarkeit und landet schneller in Chats, Gruppen und Feeds.</p>
+        </section>
+
+        <section class="summary-box">
+          <h4>Bild- und Beitrag prüfen</h4>
+          <ul class="final-checklist compact-list">
+            <li>Achte auf seltsame Details, falsche Bildausschnitte oder unlogische Elemente.</li>
+            <li>Prüfe, ob Überschrift, Bild, Quelle und Text wirklich zusammenpassen.</li>
+            <li>Nutze bei Unsicherheit eine Bilderrückwärtssuche oder Faktencheck-Seiten.</li>
+          </ul>
+        </section>
+      </div>
+
+      <div class="source-box">
+        <h4>Wo kannst du Fakten prüfen?</h4>
+        <p>Hilfreiche Anlaufstellen sind zum Beispiel Correctiv, Mimikama und der ARD-Faktenfinder. Dort kannst du verdächtige Meldungen gegenchecken.</p>
+      </div>
+      <p id="db-save-status" class="db-save-status">Dein Ergebnis wird anonym in der Datenbank gespeichert.</p>
+      <div class="result-actions">
+        <button onclick="window.print()" class="btn btn-secondary">Checkliste als PDF speichern</button>
+        <button onclick="location.reload()" class="btn btn-primary">Zurück zum Start</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>
