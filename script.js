@@ -2,328 +2,414 @@ const SUPABASE_URL = "https://nyejprqlgzybrraudcz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iOGy9PawDNtRKdKyAQRhhA_03YNGm4T";
 let supabaseClient = null;
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (window.supabase) {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } else {
-    console.warn("Supabase konnte nicht geladen werden.");
-  }
-});
-
-const akten = [
+// Notfall-Version: Wenn Supabase nicht lädt, funktioniert das Spiel trotzdem lokal.
+const fallbackAkten = [
   {
-    type: 'mc',
-    title: 'Der emotionale Koeder',
-    dialog: 'Nova: "Dieser Post klingt absichtlich laut und panisch. Wenn du so etwas siehst, frag dich immer zuerst: Soll ich informiert werden - oder nur aufgeregt?"',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic clue-scene">
-        <div class="clue-card alert">Eilmeldung</div>
-        <div class="clue-card">Kommentarspalte</div>
-        <div class="clue-card muted-card">Teilen?</div>
-      </div>
-    `,
-    question: 'Was ist hier das deutlichste Warnsignal?',
-    options: [
-      { text: 'Die Sprache arbeitet mit Druck, Panik und dem Aufruf zum sofortigen Teilen.', correct: true },
-      { text: 'Die Meldung ist automatisch glaubwuerdig, weil sie sehr entschlossen klingt.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Emotionen als Trick',
-    learningText: 'Fake News wollen dich oft nicht informieren, sondern in Sekunden zu Wut, Angst oder hektischem Teilen treiben.'
-  },
-  {
-    type: 'mc',
-    title: 'Die URL-Falle',
-    dialog: 'Nova: "Viele Falschmeldungen sehen auf den ersten Blick serioes aus. Aber die Adresse verraet oft mehr als die Schlagzeile."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic browser-clue">
-        <div class="browser-top"><span></span><span></span><span></span></div>
-        <div class="url-placeholder">https://... / ...</div>
-        <div class="clue-lines"><i></i><i></i><i></i></div>
-      </div>
-    `,
-    question: 'Worauf solltest du bei verdaechtigen Links besonders achten?',
-    options: [
-      { text: 'Auf ungewoehnliche Endungen, zusammengesetzte Fantasienamen und nachgemachte bekannte Marken.', correct: true },
-      { text: 'Nur darauf, ob irgendwo das Wort "offiziell" im Link vorkommt.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Links genau lesen',
-    learningText: 'Dubiose Seiten kopieren oft Namen bekannter Medien. Schau auf die komplette Domain, nicht nur auf ein bekanntes Wort darin.'
-  },
-  {
-    type: 'hotspot',
-    title: 'Die Bildersuche',
-    dialog: 'Nova: "Hier liegt ein angeblicher Nachrichtenartikel auf meinem Tisch. Irgendetwas daran ist faul. Finde drei Hinweise, die gegen die Glaubwuerdigkeit sprechen."',
-    evidenceType: 'hotspot',
-    image: 'akte3-bildersuche.png',
-    question: 'Klicke auf drei auffaellige Stellen im Bild.',
-    hotspots: [
+    "type": "mc",
+    "title": "Der emotionale Koeder",
+    "dialog": "Nova: \"Dieser Post klingt absichtlich laut und panisch. Wenn du so etwas siehst, frag dich immer zuerst: Soll ich informiert werden - oder nur aufgeregt?\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic clue-scene\">\n        <div class=\"clue-card alert\">Eilmeldung</div>\n        <div class=\"clue-card\">Kommentarspalte</div>\n        <div class=\"clue-card muted-card\">Teilen?</div>\n      </div>\n    ",
+    "question": "Was ist hier das deutlichste Warnsignal?",
+    "options": [
       {
-        id: 1,
-        top: '41.5%', left: '28%', width: '31%', height: '7%',
-        title: 'Reisserische Ueberschrift',
-        explanation: 'Die Schlagzeile ist sehr dramatisch formuliert und soll sofort Aufmerksamkeit ausloesen.'
+        "text": "Die Sprache arbeitet mit Druck, Panik und dem Aufruf zum sofortigen Teilen.",
+        "correct": true
       },
       {
-        id: 2,
-        top: '49%', left: '30%', width: '28%', height: '7%',
-        title: 'Quelle und Autor pruefen',
-        explanation: 'Autor, Datum und Webseite sollten nachvollziehbar sein. Hier wirkt die Quelle wenig vertrauenswuerdig.'
-      },
-      {
-        id: 3,
-        top: '65%', left: '39%', width: '43%', height: '18%',
-        title: 'Aufforderung zum Teilen',
-        explanation: 'Der rote Kasten draengt zum schnellen Teilen. Solcher Druck ist ein typischer Warnhinweis.'
+        "text": "Die Meldung ist automatisch glaubwuerdig, weil sie sehr entschlossen klingt.",
+        "correct": false
       }
     ],
-    learningTitle: 'Gelernt: Hinweise im Gesamtbild lesen',
-    learningText: 'Nicht nur Texte, auch Aufbau und Tonfall liefern Hinweise: Schock-Schlagzeilen, dubiose Quellen und Teil-Aufrufe sind starke Warnzeichen.'
+    "learningTitle": "Gelernt: Emotionen als Trick",
+    "learningText": "Fake News wollen dich oft nicht informieren, sondern in Sekunden zu Wut, Angst oder hektischem Teilen treiben."
   },
   {
-    type: 'dragdrop',
-    title: 'Wie sich Fake News verbreiten',
-    dialog: 'Nova: "Eine Luege wird selten einfach nur gepostet. Meist gibt es einen typischen Weg, wie sie gross wird."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic spread-graphic">
-        <div class="fake-post">
-          <span class="post-label">unbestätigte Behauptung</span>
-          <div class="post-lines"><i></i><i></i><i></i></div>
-        </div>
-        <div class="reaction-cloud">
-          <span>!</span><span>?</span><span>↗</span><span>❤</span>
-        </div>
-        <div class="share-path"><i></i><i></i><i></i></div>
-      </div>
-    `,
-    question: 'Bringe die Verbreitung in eine sinnvolle Reihenfolge.',
-    items: ['Menschen teilen die Meldung weiter', 'Jemand erfindet oder verdreht eine Behauptung', 'Plattformen zeigen die Meldung mehr Leuten', 'Die Meldung bekommt viele emotionale Reaktionen'],
-    correctOrder: ['Jemand erfindet oder verdreht eine Behauptung', 'Die Meldung bekommt viele emotionale Reaktionen', 'Plattformen zeigen die Meldung mehr Leuten', 'Menschen teilen die Meldung weiter'],
-    learningTitle: 'Gelernt: Reichweite entsteht in Schritten',
-    learningText: 'Viele Falschmeldungen werden erst durch starke Reaktionen gross. Algorithmen verstaerken, was viel Aufmerksamkeit bekommt.'
-  },
-  {
-    type: 'mc',
-    title: 'Wem nuetzt die Luege?',
-    dialog: 'Nova: "Ermittler fragen oft: Wer profitiert davon? Genau diese Frage hilft auch bei Fake News."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic motive-board-graphic">
-        <div class="motive-desk">
-          <div class="motive-laptop"></div>
-          <div class="motive-news-card card-one"></div>
-          <div class="motive-news-card card-two"></div>
-          <div class="motive-shadow-person"></div>
-          <div class="motive-arrow arrow-one"></div>
-          <div class="motive-arrow arrow-two"></div>
-          <div class="motive-crowd"><span></span><span></span><span></span></div>
-        </div>
-      </div>
-    `,
-    question: 'Warum werden Fake News oft absichtlich verbreitet?',
-    options: [
-      { text: 'Um Geld, Aufmerksamkeit oder politischen Einfluss zu gewinnen.', correct: true },
-      { text: 'Weil die meisten Menschen aus Versehen komplette Artikel erfinden.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Hinter Fake News steckt oft ein Ziel',
-    learningText: 'Falschmeldungen entstehen nicht immer zufaellig. Oft geht es um Reichweite, Geld, Stimmungsmache oder Einfluss.'
-  },
-  {
-    type: 'mc',
-    title: 'Fakt oder Meinung?',
-    dialog: 'Nova: "Eine gute Detektivin trennt immer sauber zwischen messbaren Fakten und persoenlichen Bewertungen."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic">
-        <div class="mini-card">
-          <strong>Beispiel:</strong>
-          <p>"Die Temperaturen sind heute 4 Grad hoeher als gestern. Das ist eine Katastrophe!"</p>
-        </div>
-      </div>
-    `,
-    question: 'Welcher Teil ist ein pruefbarer Fakt?',
-    options: [
-      { text: 'Dass es heute 4 Grad waermer ist als gestern.', correct: true },
-      { text: 'Dass die Lage deshalb automatisch eine Katastrophe ist.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Fakten sind pruefbar',
-    learningText: 'Zahlen, Daten und konkrete Messwerte kann man nachpruefen. Wertungen wie "katastrophal" sind Meinungen oder Framings.'
-  },
-  {
-    type: 'mc',
-    title: 'Deepfake oder echt?',
-    dialog: 'Nova: "Nicht jedes Bild oder Video zeigt die Wirklichkeit. Gerade bei KI-Inhalten lohnt sich ein zweiter Blick."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic ai-check-graphic">
-        <div class="photo-frame soft-photo-frame">
-          <div class="portrait-circle"></div>
-          <div class="image-detail-dots"><span></span><span></span><span></span></div>
-        </div>
-        <div class="magnifier-card">
-          <div class="mini-lens"></div>
-          <div class="clue-lines"><i></i><i></i><i></i></div>
-        </div>
-      </div>
-    `,
-    question: 'Welcher Hinweis passt am besten zu einem KI-generierten Fake-Bild?',
-    options: [
-      { text: 'Unlogische Details wie seltsame Haende, schiefe Objekte oder unleserlicher Text im Hintergrund.', correct: true },
-      { text: 'Dass das Bild automatisch alt aussieht oder in Schwarzweiss ist.', correct: false }
-    ],
-    learningTitle: 'Gelernt: KI-Bilder haben oft kleine Brueche',
-    learningText: 'Viele manipulierte Bilder fallen nicht sofort auf. Achte auf Details, die in der echten Welt unlogisch wirken.'
-  },
-  {
-    type: 'mc',
-    title: 'Der Kettenbrief im Chat',
-    dialog: 'Nova: "Viele Falschmeldungen verbreiten sich nicht ueber grosse Nachrichtenseiten, sondern ganz privat im Familienchat."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic">
-        <div class="chat-bubble-demo">Bitte sofort an alle Kontakte weiterleiten! Das wird bald geloescht!</div>
-      </div>
-    `,
-    question: 'Wie reagierst du am besten auf so einen Kettenbrief?',
-    options: [
-      { text: 'Nicht einfach weiterleiten, sondern erst pruefen und gegebenenfalls ruhig widersprechen.', correct: true },
-      { text: 'Lieber schnell weiterschicken - sicher ist sicher.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Nicht jeder Hinweis ist hilfreich',
-    learningText: 'Gerade private Nachrichten wirken vertraulich. Das macht sie aber nicht automatisch wahr.'
-  },
-  {
-    type: 'mc',
-    title: 'Wie schuetzt du dich?',
-    dialog: 'Nova: "Fake News komplett zu verhindern ist schwer. Aber du kannst viel tun, damit sie dich nicht so leicht erwischen."',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic safety-scene-graphic">
-        <div class="phone-warning">
-          <div class="phone-top"></div>
-          <div class="phone-lines"><span></span><span></span><span></span></div>
-        </div>
-        <div class="pause-bubble">Ⅱ</div>
-        <div class="detective-tools">
-          <div class="tool-lens"></div>
-          <div class="tool-paper"><span></span><span></span></div>
-        </div>
-      </div>
-    `,
-    question: 'Welche Strategie hilft am meisten?',
-    options: [
-      { text: 'Nicht sofort reagieren, sondern Quelle, Datum und Kontext kurz pruefen.', correct: true },
-      { text: 'Nur Schlagzeilen lesen und auf das eigene Bauchgefuehl vertrauen.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Schutz beginnt mit einer Pause',
-    learningText: 'Schon wenige Sekunden Nachdenken koennen verhindern, dass du auf eine Falschmeldung hereinfällst oder sie weiterverbreitest.'
-  },
-  {
-    type: 'imageCompare',
-    title: 'Bildmanipulation: Vorher oder Nachher?',
-    dialog: 'Nova: "Bilder koennen veraendert werden, ohne dass man es sofort merkt. Zieh den Regler und untersuche, was sich veraendert hat."',
-    evidenceType: 'imageCompare',
-    question: 'Welche Manipulation wurde im Nachher-Bild eingebaut?',
-    options: [
-      { text: 'Rauch wurde hinzugefuegt, eine Person entfernt, die Farbe dramatischer gemacht und Text eingefuegt.', correct: true },
-      { text: 'Es wurde nur ein anderer Bildausschnitt gewaehlt, sonst ist nichts veraendert.', correct: false },
-      { text: 'Das Bild ist nur heller geworden, inhaltlich bleibt alles gleich.', correct: false }
-    ],
-    learningTitle: 'Gelernt: Bilder koennen Stimmung machen',
-    learningText: 'Manipulationen muessen nicht gross sein: Rauch, entfernte Personen, veraenderte Farben oder eingefuegter Text koennen die Wirkung stark veraendern.'
-  },
-  {
-    type: 'feedSelect',
-    title: 'Der Fake-News-Feed',
-    dialog: 'Nova: "In echten Feeds stehen serioese Posts und zweifelhafte Meldungen oft direkt nebeneinander. Scrolle durch den Feed und markiere die zwei verdaechtigen Beitraege."',
-    evidenceType: 'feedSelect',
-    question: 'Welche zwei Feed-Beitraege sind verdaechtig?',
-    requiredCorrect: 2,
-    posts: [
+    "type": "mc",
+    "title": "Die URL-Falle",
+    "dialog": "Nova: \"Viele Falschmeldungen sehen auf den ersten Blick serioes aus. Aber die Adresse verraet oft mehr als die Schlagzeile.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic browser-clue\">\n        <div class=\"browser-top\"><span></span><span></span><span></span></div>\n        <div class=\"url-placeholder\">https://... / ...</div>\n        <div class=\"clue-lines\"><i></i><i></i><i></i></div>\n      </div>\n    ",
+    "question": "Worauf solltest du bei verdaechtigen Links besonders achten?",
+    "options": [
       {
-        title: 'Stadt informiert ueber neue Buszeiten',
-        meta: 'stadt-wuerzburg.de · heute · offizielle Mitteilung',
-        text: 'Ab Montag gelten neue Fahrplaene. Alle Details stehen auf der offiziellen Webseite der Stadt.',
-        correct: false,
-        hint: 'Unauffaellig: offizielle Quelle, klares Datum und nachvollziehbarer Link.'
+        "text": "Auf ungewoehnliche Endungen, zusammengesetzte Fantasienamen und nachgemachte bekannte Marken.",
+        "correct": true
       },
       {
-        title: 'SCHOCK: Das wird euch verheimlicht!!!',
-        meta: 'wahrheit-jetzt24.co · kein Autor · kein Datum',
-        text: 'Teile diesen Beitrag sofort, bevor er geloescht wird. Alle Medien schweigen angeblich!',
-        correct: true,
-        hint: 'Fake-News-Muster: extreme Sprache, kein Autor, kein Datum und Druck zum Teilen.'
-      },
-      {
-        title: 'Interview mit Medienexpertin',
-        meta: 'regionalzeitung.de · gestern · Autorin sichtbar',
-        text: 'Eine Expertin erklaert, warum Quellenpruefung im Netz wichtig ist und welche Fehler haeufig passieren.',
-        correct: false,
-        hint: 'Unauffaellig: Quelle, Zeitpunkt und Autorin sind sichtbar.'
-      },
-      {
-        title: 'Unglaubliches Video beweist alles!',
-        meta: 'viral-news-club.net · Screenshot · Quelle unbekannt',
-        text: 'Das Video soll angeblich eine geheime Entscheidung zeigen. Einen Original-Link gibt es aber nicht.',
-        correct: true,
-        hint: 'Fake-News-Muster: unklare Herkunft, kein Original-Link und sehr grosse Behauptung.'
-      },
-      {
-        title: 'Faktencheck: Altes Bild kursiert erneut',
-        meta: 'faktencheck.org · heute · Quellen im Artikel',
-        text: 'Der Beitrag ordnet ein altes Foto ein und zeigt, aus welchem Jahr es wirklich stammt.',
-        correct: false,
-        hint: 'Unauffaellig: Der Beitrag erklaert Quellen und Kontext transparent.'
+        "text": "Nur darauf, ob irgendwo das Wort \"offiziell\" im Link vorkommt.",
+        "correct": false
       }
     ],
-    learningTitle: 'Gelernt: Im Feed genau hinschauen',
-    learningText: 'Fake News tarnen sich zwischen normalen Posts. Besonders verdaechtig sind fehlende Quellen, extreme Sprache, Druck zum Teilen, unbekannte Webseiten und fehlende Originalbelege.'
+    "learningTitle": "Gelernt: Links genau lesen",
+    "learningText": "Dubiose Seiten kopieren oft Namen bekannter Medien. Schau auf die komplette Domain, nicht nur auf ein bekanntes Wort darin."
   },
   {
-    type: 'ampel',
-    title: 'Fake-News-Ampel',
-    dialog: 'Nova: "Manchmal ist eine Meldung nicht sofort eindeutig. Die Ampel hilft dir: gruen heisst okay, gelb heisst pruefen, rot heisst sehr verdaechtig."',
-    evidenceType: 'ampel',
-    question: 'Wie wuerdest du diese Meldung einschaetzen?',
-    postTitle: 'Unglaublich: Schule verbietet ab morgen alle Handys!',
-    postMeta: 'Screenshot aus einem Gruppenchat · keine Quelle · keine offizielle Meldung',
-    postText: 'Alle sollen das sofort weiterleiten. Angeblich wurde es gerade beschlossen.',
-    choices: [
-      { color: 'green', label: 'Gruen: wirkt glaubwuerdig', correct: false },
-      { color: 'yellow', label: 'Gelb: erst pruefen', correct: false },
-      { color: 'red', label: 'Rot: stark verdaechtig', correct: true }
+    "type": "hotspot",
+    "title": "Die Bildersuche",
+    "dialog": "Nova: \"Hier liegt ein angeblicher Nachrichtenartikel auf meinem Tisch. Irgendetwas daran ist faul. Finde drei Hinweise, die gegen die Glaubwuerdigkeit sprechen.\"",
+    "evidenceType": "hotspot",
+    "image": "akte3-bildersuche.png",
+    "question": "Klicke auf drei auffaellige Stellen im Bild.",
+    "hotspots": [
+      {
+        "id": 1,
+        "top": "41.5%",
+        "left": "28%",
+        "width": "31%",
+        "height": "7%",
+        "title": "Reisserische Ueberschrift",
+        "explanation": "Die Schlagzeile ist sehr dramatisch formuliert und soll sofort Aufmerksamkeit ausloesen."
+      },
+      {
+        "id": 2,
+        "top": "49%",
+        "left": "30%",
+        "width": "28%",
+        "height": "7%",
+        "title": "Quelle und Autor pruefen",
+        "explanation": "Autor, Datum und Webseite sollten nachvollziehbar sein. Hier wirkt die Quelle wenig vertrauenswuerdig."
+      },
+      {
+        "id": 3,
+        "top": "65%",
+        "left": "39%",
+        "width": "43%",
+        "height": "18%",
+        "title": "Aufforderung zum Teilen",
+        "explanation": "Der rote Kasten draengt zum schnellen Teilen. Solcher Druck ist ein typischer Warnhinweis."
+      }
     ],
-    learningTitle: 'Gelernt: Rot bei Druck und fehlender Quelle',
-    learningText: 'Wenn Quelle, Datum und offizielle Bestaetigung fehlen und gleichzeitig zum Weiterleiten gedraengt wird, ist die Meldung stark verdaechtig.'
+    "learningTitle": "Gelernt: Hinweise im Gesamtbild lesen",
+    "learningText": "Nicht nur Texte, auch Aufbau und Tonfall liefern Hinweise: Schock-Schlagzeilen, dubiose Quellen und Teil-Aufrufe sind starke Warnzeichen."
   },
   {
-    type: 'mc',
-    title: 'Der letzte Faktencheck',
-    dialog: 'Nova: "Zum Abschluss bekommst du eine neue Behauptung. Jetzt zaehlt nicht Auswendiglernen, sondern dein Vorgehen: Wie pruefst du sauber weiter?"',
-    evidenceType: 'html',
-    evidence: `
-      <div class="inline-graphic final-check-graphic">
-        <div class="claim-card">
-          <strong>Behauptung</strong>
-          <p>Eine Nachricht klingt krass, nennt aber keine klare Quelle.</p>
-        </div>
-        <div class="search-beam"></div>
-        <div class="source-stack">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-    `,
-    question: 'Was ist der sinnvollste naechste Schritt?',
-    options: [
-      { text: 'Die Behauptung mit mehreren serioesen Quellen oder Faktencheck-Seiten abgleichen.', correct: true },
-      { text: 'Nur den Screenshot speichern und ihn sofort weiterleiten, damit andere auch Bescheid wissen.', correct: false }
+    "type": "dragdrop",
+    "title": "Wie sich Fake News verbreiten",
+    "dialog": "Nova: \"Eine Luege wird selten einfach nur gepostet. Meist gibt es einen typischen Weg, wie sie gross wird.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic spread-graphic\">\n        <div class=\"fake-post\">\n          <span class=\"post-label\">unbestätigte Behauptung</span>\n          <div class=\"post-lines\"><i></i><i></i><i></i></div>\n        </div>\n        <div class=\"reaction-cloud\">\n          <span>!</span><span>?</span><span>↗</span><span>❤</span>\n        </div>\n        <div class=\"share-path\"><i></i><i></i><i></i></div>\n      </div>\n    ",
+    "question": "Bringe die Verbreitung in eine sinnvolle Reihenfolge.",
+    "items": [
+      "Menschen teilen die Meldung weiter",
+      "Jemand erfindet oder verdreht eine Behauptung",
+      "Plattformen zeigen die Meldung mehr Leuten",
+      "Die Meldung bekommt viele emotionale Reaktionen"
     ],
-    learningTitle: 'Gelernt: Erst pruefen, dann teilen',
-    learningText: 'Ein guter Faktencheck vergleicht mehrere verlaessliche Quellen. Erst wenn Quelle, Datum und Kontext stimmen, sollte man eine Meldung weitergeben.'
+    "correctOrder": [
+      "Jemand erfindet oder verdreht eine Behauptung",
+      "Die Meldung bekommt viele emotionale Reaktionen",
+      "Plattformen zeigen die Meldung mehr Leuten",
+      "Menschen teilen die Meldung weiter"
+    ],
+    "learningTitle": "Gelernt: Reichweite entsteht in Schritten",
+    "learningText": "Viele Falschmeldungen werden erst durch starke Reaktionen gross. Algorithmen verstaerken, was viel Aufmerksamkeit bekommt."
+  },
+  {
+    "type": "mc",
+    "title": "Wem nuetzt die Luege?",
+    "dialog": "Nova: \"Ermittler fragen oft: Wer profitiert davon? Genau diese Frage hilft auch bei Fake News.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic motive-board-graphic\">\n        <div class=\"motive-desk\">\n          <div class=\"motive-laptop\"></div>\n          <div class=\"motive-news-card card-one\"></div>\n          <div class=\"motive-news-card card-two\"></div>\n          <div class=\"motive-shadow-person\"></div>\n          <div class=\"motive-arrow arrow-one\"></div>\n          <div class=\"motive-arrow arrow-two\"></div>\n          <div class=\"motive-crowd\"><span></span><span></span><span></span></div>\n        </div>\n      </div>\n    ",
+    "question": "Warum werden Fake News oft absichtlich verbreitet?",
+    "options": [
+      {
+        "text": "Um Geld, Aufmerksamkeit oder politischen Einfluss zu gewinnen.",
+        "correct": true
+      },
+      {
+        "text": "Weil die meisten Menschen aus Versehen komplette Artikel erfinden.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: Hinter Fake News steckt oft ein Ziel",
+    "learningText": "Falschmeldungen entstehen nicht immer zufaellig. Oft geht es um Reichweite, Geld, Stimmungsmache oder Einfluss."
+  },
+  {
+    "type": "mc",
+    "title": "Fakt oder Meinung?",
+    "dialog": "Nova: \"Eine gute Detektivin trennt immer sauber zwischen messbaren Fakten und persoenlichen Bewertungen.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic\">\n        <div class=\"mini-card\">\n          <strong>Beispiel:</strong>\n          <p>\"Die Temperaturen sind heute 4 Grad hoeher als gestern. Das ist eine Katastrophe!\"</p>\n        </div>\n      </div>\n    ",
+    "question": "Welcher Teil ist ein pruefbarer Fakt?",
+    "options": [
+      {
+        "text": "Dass es heute 4 Grad waermer ist als gestern.",
+        "correct": true
+      },
+      {
+        "text": "Dass die Lage deshalb automatisch eine Katastrophe ist.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: Fakten sind pruefbar",
+    "learningText": "Zahlen, Daten und konkrete Messwerte kann man nachpruefen. Wertungen wie \"katastrophal\" sind Meinungen oder Framings."
+  },
+  {
+    "type": "mc",
+    "title": "Deepfake oder echt?",
+    "dialog": "Nova: \"Nicht jedes Bild oder Video zeigt die Wirklichkeit. Gerade bei KI-Inhalten lohnt sich ein zweiter Blick.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic ai-check-graphic\">\n        <div class=\"photo-frame soft-photo-frame\">\n          <div class=\"portrait-circle\"></div>\n          <div class=\"image-detail-dots\"><span></span><span></span><span></span></div>\n        </div>\n        <div class=\"magnifier-card\">\n          <div class=\"mini-lens\"></div>\n          <div class=\"clue-lines\"><i></i><i></i><i></i></div>\n        </div>\n      </div>\n    ",
+    "question": "Welcher Hinweis passt am besten zu einem KI-generierten Fake-Bild?",
+    "options": [
+      {
+        "text": "Unlogische Details wie seltsame Haende, schiefe Objekte oder unleserlicher Text im Hintergrund.",
+        "correct": true
+      },
+      {
+        "text": "Dass das Bild automatisch alt aussieht oder in Schwarzweiss ist.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: KI-Bilder haben oft kleine Brueche",
+    "learningText": "Viele manipulierte Bilder fallen nicht sofort auf. Achte auf Details, die in der echten Welt unlogisch wirken."
+  },
+  {
+    "type": "mc",
+    "title": "Der Kettenbrief im Chat",
+    "dialog": "Nova: \"Viele Falschmeldungen verbreiten sich nicht ueber grosse Nachrichtenseiten, sondern ganz privat im Familienchat.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic\">\n        <div class=\"chat-bubble-demo\">Bitte sofort an alle Kontakte weiterleiten! Das wird bald geloescht!</div>\n      </div>\n    ",
+    "question": "Wie reagierst du am besten auf so einen Kettenbrief?",
+    "options": [
+      {
+        "text": "Nicht einfach weiterleiten, sondern erst pruefen und gegebenenfalls ruhig widersprechen.",
+        "correct": true
+      },
+      {
+        "text": "Lieber schnell weiterschicken - sicher ist sicher.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: Nicht jeder Hinweis ist hilfreich",
+    "learningText": "Gerade private Nachrichten wirken vertraulich. Das macht sie aber nicht automatisch wahr."
+  },
+  {
+    "type": "mc",
+    "title": "Wie schuetzt du dich?",
+    "dialog": "Nova: \"Fake News komplett zu verhindern ist schwer. Aber du kannst viel tun, damit sie dich nicht so leicht erwischen.\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic safety-scene-graphic\">\n        <div class=\"phone-warning\">\n          <div class=\"phone-top\"></div>\n          <div class=\"phone-lines\"><span></span><span></span><span></span></div>\n        </div>\n        <div class=\"pause-bubble\">Ⅱ</div>\n        <div class=\"detective-tools\">\n          <div class=\"tool-lens\"></div>\n          <div class=\"tool-paper\"><span></span><span></span></div>\n        </div>\n      </div>\n    ",
+    "question": "Welche Strategie hilft am meisten?",
+    "options": [
+      {
+        "text": "Nicht sofort reagieren, sondern Quelle, Datum und Kontext kurz pruefen.",
+        "correct": true
+      },
+      {
+        "text": "Nur Schlagzeilen lesen und auf das eigene Bauchgefuehl vertrauen.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: Schutz beginnt mit einer Pause",
+    "learningText": "Schon wenige Sekunden Nachdenken koennen verhindern, dass du auf eine Falschmeldung hereinfällst oder sie weiterverbreitest."
+  },
+  {
+    "type": "imageCompare",
+    "title": "Bildmanipulation: Vorher oder Nachher?",
+    "dialog": "Nova: \"Bilder koennen veraendert werden, ohne dass man es sofort merkt. Zieh den Regler und untersuche, was sich veraendert hat.\"",
+    "evidenceType": "imageCompare",
+    "question": "Welche Manipulation wurde im Nachher-Bild eingebaut?",
+    "options": [
+      {
+        "text": "Rauch wurde hinzugefuegt, eine Person entfernt, die Farbe dramatischer gemacht und Text eingefuegt.",
+        "correct": true
+      },
+      {
+        "text": "Es wurde nur ein anderer Bildausschnitt gewaehlt, sonst ist nichts veraendert.",
+        "correct": false
+      },
+      {
+        "text": "Das Bild ist nur heller geworden, inhaltlich bleibt alles gleich.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: Bilder koennen Stimmung machen",
+    "learningText": "Manipulationen muessen nicht gross sein: Rauch, entfernte Personen, veraenderte Farben oder eingefuegter Text koennen die Wirkung stark veraendern."
+  },
+  {
+    "type": "feedSelect",
+    "title": "Der Fake-News-Feed",
+    "dialog": "Nova: \"In echten Feeds stehen serioese Posts und zweifelhafte Meldungen oft direkt nebeneinander. Scrolle durch den Feed und markiere die zwei verdaechtigen Beitraege.\"",
+    "evidenceType": "feedSelect",
+    "question": "Welche zwei Feed-Beitraege sind verdaechtig?",
+    "requiredCorrect": 2,
+    "posts": [
+      {
+        "title": "Stadt informiert ueber neue Buszeiten",
+        "meta": "stadt-wuerzburg.de · heute · offizielle Mitteilung",
+        "text": "Ab Montag gelten neue Fahrplaene. Alle Details stehen auf der offiziellen Webseite der Stadt.",
+        "correct": false,
+        "hint": "Unauffaellig: offizielle Quelle, klares Datum und nachvollziehbarer Link."
+      },
+      {
+        "title": "SCHOCK: Das wird euch verheimlicht!!!",
+        "meta": "wahrheit-jetzt24.co · kein Autor · kein Datum",
+        "text": "Teile diesen Beitrag sofort, bevor er geloescht wird. Alle Medien schweigen angeblich!",
+        "correct": true,
+        "hint": "Fake-News-Muster: extreme Sprache, kein Autor, kein Datum und Druck zum Teilen."
+      },
+      {
+        "title": "Interview mit Medienexpertin",
+        "meta": "regionalzeitung.de · gestern · Autorin sichtbar",
+        "text": "Eine Expertin erklaert, warum Quellenpruefung im Netz wichtig ist und welche Fehler haeufig passieren.",
+        "correct": false,
+        "hint": "Unauffaellig: Quelle, Zeitpunkt und Autorin sind sichtbar."
+      },
+      {
+        "title": "Unglaubliches Video beweist alles!",
+        "meta": "viral-news-club.net · Screenshot · Quelle unbekannt",
+        "text": "Das Video soll angeblich eine geheime Entscheidung zeigen. Einen Original-Link gibt es aber nicht.",
+        "correct": true,
+        "hint": "Fake-News-Muster: unklare Herkunft, kein Original-Link und sehr grosse Behauptung."
+      },
+      {
+        "title": "Faktencheck: Altes Bild kursiert erneut",
+        "meta": "faktencheck.org · heute · Quellen im Artikel",
+        "text": "Der Beitrag ordnet ein altes Foto ein und zeigt, aus welchem Jahr es wirklich stammt.",
+        "correct": false,
+        "hint": "Unauffaellig: Der Beitrag erklaert Quellen und Kontext transparent."
+      }
+    ],
+    "learningTitle": "Gelernt: Im Feed genau hinschauen",
+    "learningText": "Fake News tarnen sich zwischen normalen Posts. Besonders verdaechtig sind fehlende Quellen, extreme Sprache, Druck zum Teilen, unbekannte Webseiten und fehlende Originalbelege."
+  },
+  {
+    "type": "ampel",
+    "title": "Fake-News-Ampel",
+    "dialog": "Nova: \"Manchmal ist eine Meldung nicht sofort eindeutig. Die Ampel hilft dir: gruen heisst okay, gelb heisst pruefen, rot heisst sehr verdaechtig.\"",
+    "evidenceType": "ampel",
+    "question": "Wie wuerdest du diese Meldung einschaetzen?",
+    "postTitle": "Unglaublich: Schule verbietet ab morgen alle Handys!",
+    "postMeta": "Screenshot aus einem Gruppenchat · keine Quelle · keine offizielle Meldung",
+    "postText": "Alle sollen das sofort weiterleiten. Angeblich wurde es gerade beschlossen.",
+    "choices": [
+      {
+        "color": "green",
+        "label": "Gruen: wirkt glaubwuerdig",
+        "correct": false
+      },
+      {
+        "color": "yellow",
+        "label": "Gelb: erst pruefen",
+        "correct": false
+      },
+      {
+        "color": "red",
+        "label": "Rot: stark verdaechtig",
+        "correct": true
+      }
+    ],
+    "learningTitle": "Gelernt: Rot bei Druck und fehlender Quelle",
+    "learningText": "Wenn Quelle, Datum und offizielle Bestaetigung fehlen und gleichzeitig zum Weiterleiten gedraengt wird, ist die Meldung stark verdaechtig."
+  },
+  {
+    "type": "mc",
+    "title": "Der letzte Faktencheck",
+    "dialog": "Nova: \"Zum Abschluss bekommst du eine neue Behauptung. Jetzt zaehlt nicht Auswendiglernen, sondern dein Vorgehen: Wie pruefst du sauber weiter?\"",
+    "evidenceType": "html",
+    "evidence": "\n      <div class=\"inline-graphic final-check-graphic\">\n        <div class=\"claim-card\">\n          <strong>Behauptung</strong>\n          <p>Eine Nachricht klingt krass, nennt aber keine klare Quelle.</p>\n        </div>\n        <div class=\"search-beam\"></div>\n        <div class=\"source-stack\">\n          <span></span><span></span><span></span>\n        </div>\n      </div>\n    ",
+    "question": "Was ist der sinnvollste naechste Schritt?",
+    "options": [
+      {
+        "text": "Die Behauptung mit mehreren serioesen Quellen oder Faktencheck-Seiten abgleichen.",
+        "correct": true
+      },
+      {
+        "text": "Nur den Screenshot speichern und ihn sofort weiterleiten, damit andere auch Bescheid wissen.",
+        "correct": false
+      }
+    ],
+    "learningTitle": "Gelernt: Erst pruefen, dann teilen",
+    "learningText": "Ein guter Faktencheck vergleicht mehrere verlaessliche Quellen. Erst wenn Quelle, Datum und Kontext stimmen, sollte man eine Meldung weitergeben."
   }
 ];
+
+function getSupabaseClient() {
+  if (!supabaseClient && window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return supabaseClient;
+}
+
+function parseCorrectLetter(letter) {
+  const value = (letter || "").trim().toUpperCase();
+  if (value.startsWith("A")) return 0;
+  if (value.startsWith("B")) return 1;
+  if (value.startsWith("C")) return 2;
+  if (value.startsWith("D")) return 3;
+  return 0;
+}
+
+function dbRowToAkte(row) {
+  // Spezial-Fälle behalten ihre Interaktionen aus der Fallback-Version.
+  // Die sichtbaren Inhalte kommen trotzdem aus der Datenbank.
+  const fallback = fallbackAkten.find(a => a.title === row.titel) || fallbackAkten.find(a => a.id === row.id) || {};
+
+  const typ = row.typ || fallback.type || "mc";
+  const answers = [row.antwort_a, row.antwort_b, row.antwort_c, row.antwort_d]
+    .filter(answer => answer !== null && answer !== undefined && String(answer).trim() !== "");
+
+  let akte = { ...fallback };
+
+  akte.id = row.id;
+  akte.title = row.titel || fallback.title;
+  akte.type = typ;
+  akte.dialog = row.nova_dialog || fallback.dialog || "";
+  akte.evidenceType = row.evidence_type || fallback.evidenceType || "html";
+  akte.question = row.frage || fallback.question || "";
+  akte.learningTitle = fallback.learningTitle || "Gelernt";
+  akte.learningText = row.erklaerung || fallback.learningText || "";
+  akte.image = row.bild_datei || fallback.image || "";
+
+  if (typ === "mc" || typ === "imageCompare") {
+    const correctIndex = parseCorrectLetter(row.richtige_antwort);
+    akte.options = answers.map((text, index) => ({
+      text,
+      correct: index === correctIndex
+    }));
+  }
+
+  if (typ === "ampel") {
+    akte.choices = answers.map((text, index) => ({
+      label: text,
+      color: index === 0 ? "green" : index === 1 ? "yellow" : "red",
+      correct: String(row.richtige_antwort || "").toLowerCase().includes(text.toLowerCase()) || String(row.richtige_antwort || "").toUpperCase().startsWith(["A","B","C","D"][index])
+    }));
+  }
+
+  return akte;
+}
+
+async function loadAktenFromDatabase() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    console.warn("Supabase konnte nicht geladen werden. Fallback-Akten werden genutzt.");
+    return fallbackAkten;
+  }
+
+  const { data, error } = await client
+    .from("quiz_cases")
+    .select("*")
+    .eq("aktiv", true);
+
+  if (error) {
+    console.error("Akten konnten nicht aus Supabase geladen werden:", error);
+    return fallbackAkten;
+  }
+
+  if (!data || data.length === 0) {
+    console.warn("Keine Akten in Supabase gefunden. Fallback-Akten werden genutzt.");
+    return fallbackAkten;
+  }
+
+  return data.map(dbRowToAkte);
+}
+
+
+;
 
 const startBtn = document.getElementById('start-btn');
 const prevBtn = document.getElementById('prev-btn');
@@ -403,16 +489,8 @@ if (introVideo) {
   });
 }
 
-if (showFinalBtn) {
-  showFinalBtn.addEventListener('click', () => {
-    scoreOverviewSection.classList.add('hidden');
-    resultSection.classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-}
-
-function startMissionAfterIntro() {
-  prepareRandomQuiz();
+async function startMissionAfterIntro() {
+  await prepareRandomQuiz();
   introVideoSection.classList.add('hidden');
   quizSection.classList.remove('hidden');
   loadAkte();
@@ -457,16 +535,17 @@ nextBtn.addEventListener('click', () => {
 });
 
 
-function prepareRandomQuiz() {
+async function prepareRandomQuiz() {
   currentAkte = 0;
   correctAnswers = 0;
   wrongAnswers = 0;
   answerLog = [];
   savedResultOnce = false;
 
-  // Jede Spielrunde mischt die Akten neu. Wenn später weitere Fälle ergänzt werden,
-  // werden automatisch nur 10 zufällige Fälle ausgewählt.
-  quizAkten = shuffleArray(akten).slice(0, Math.min(maxFaelleProRunde, akten.length));
+  const loadedAkten = await loadAktenFromDatabase();
+
+  // Aus der Supabase-Tabelle quiz_cases werden zufällig 10 Akten gezogen.
+  quizAkten = shuffleArray(loadedAkten).slice(0, Math.min(maxFaelleProRunde, loadedAkten.length));
 }
 
 function loadAkte() {
@@ -618,7 +697,7 @@ function renderDragdrop(akte) {
   checkBtn.addEventListener('click', () => {
     const current = Array.from(list.querySelectorAll('span')).map(el => el.textContent);
     if (JSON.stringify(current) === JSON.stringify(akte.correctOrder)) {
-      recordCaseResult(akte, !dragdropHadWrongTry, dragdropHadWrongTry ? 'Reihenfolge nach Versuch korrigiert' : 'Reihenfolge direkt richtig');
+      recordCaseResult(akte, !dragdropHadWrongTry, dragdropHadWrongTry ? 'Reihenfolge korrigiert' : 'Reihenfolge direkt richtig');
       showLearning(akte);
       checkBtn.textContent = 'Richtig geloest';
       checkBtn.disabled = true;
@@ -684,6 +763,9 @@ function renderHotspot(akte) {
       if (found === akte.hotspots.length) {
         status.textContent = `Alle ${akte.hotspots.length} Hinweise gefunden`;
         recordCaseResult(akte, true, 'Alle Hinweise gefunden');
+        if (akte.type === 'feedSelect') {
+          recordCaseResult(akte, !clickedWrong, clickedWrong ? 'Fake-Posts gefunden, aber auch falschen Post markiert' : 'Fake-Posts richtig erkannt');
+        }
         showLearning(akte);
       }
     });
@@ -766,7 +848,6 @@ function renderFeedSelect(akte) {
             ? `Alle ${needed} Fake-Posts gefunden - schau dir die Hinweise nochmal genau an.`
             : `Perfekt: Alle ${needed} Fake-Posts gefunden.`;
         }
-        recordCaseResult(akte, !clickedWrong, clickedWrong ? 'Fake-Posts gefunden, aber auch falschen Post markiert' : 'Fake-Posts direkt richtig erkannt');
         showLearning(akte);
       }
     });
@@ -826,35 +907,33 @@ async function saveGameResult() {
   if (savedResultOnce) return;
   savedResultOnce = true;
 
+  const client = getSupabaseClient();
   const totalCases = quizAkten.length;
   const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
   const rank = calculateRank(scorePercent);
 
-  if (!supabaseClient) {
-    if (databaseStatus) databaseStatus.textContent = "Datenbank nicht verbunden. Prüfe die Supabase-Einbindung.";
-    console.warn("Supabase Client fehlt.");
+  if (!client) {
+    if (databaseStatus) databaseStatus.textContent = "Datenbank nicht verbunden. Ergebnis nur lokal angezeigt.";
     return;
   }
 
-  const payload = {
-    session_id: crypto.randomUUID(),
-    finished_at: new Date().toISOString(),
-    total_cases: totalCases,
-    correct_answers: correctAnswers,
-    wrong_answers: wrongAnswers,
-    score_percent: scorePercent,
-    rank: rank,
-    played_cases: quizAkten.map(akte => akte.title),
-    answers: answerLog
-  };
-
-  const { error } = await supabaseClient
+  const { error } = await client
     .from("game_results")
-    .insert([payload]);
+    .insert([{
+      session_id: crypto.randomUUID(),
+      finished_at: new Date().toISOString(),
+      total_cases: totalCases,
+      correct_answers: correctAnswers,
+      wrong_answers: wrongAnswers,
+      score_percent: scorePercent,
+      rank: rank,
+      played_cases: quizAkten.map(akte => akte.title),
+      answers: answerLog
+    }]);
 
   if (error) {
     console.error("Supabase Speicherfehler:", error);
-    if (databaseStatus) databaseStatus.textContent = "Ergebnis konnte nicht gespeichert werden. Prüfe Supabase/Console.";
+    if (databaseStatus) databaseStatus.textContent = "Ergebnis konnte nicht gespeichert werden. Prüfe game_results und RLS-Policy.";
     return;
   }
 
@@ -880,10 +959,15 @@ function showScoreOverview() {
     `).join('');
   }
 
-  if (databaseStatus) databaseStatus.textContent = "Ergebnis wird anonym in der Datenbank gespeichert ...";
+  if (databaseStatus) databaseStatus.textContent = "Ergebnis wird anonym in Supabase gespeichert ...";
 
-  scoreOverviewSection.classList.remove('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (scoreOverviewSection) {
+    scoreOverviewSection.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    resultSection.classList.remove('hidden');
+  }
+
   saveGameResult();
 }
 
@@ -893,4 +977,12 @@ function showLearning(akte) {
   learningText.textContent = akte.learningText;
   learningBlock.classList.remove('hidden');
   learningBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+if (showFinalBtn) {
+  showFinalBtn.addEventListener('click', () => {
+    if (scoreOverviewSection) scoreOverviewSection.classList.add('hidden');
+    resultSection.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 }
