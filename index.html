@@ -228,6 +228,33 @@
     </section>
   </main>
 
+
+  <section class="score-overview-section hidden" id="score-overview-section">
+    <div class="score-overview-card">
+      <p class="eyebrow">Mission abgeschlossen</p>
+      <h2>Herzlichen Glückwunsch!</h2>
+      <p class="score-intro">Du hast alle Akten bearbeitet. Hier ist dein Ermittlungs-Ergebnis:</p>
+
+      <div class="score-big" id="score-big">0 / 10 richtig</div>
+      <div class="score-rank" id="score-rank">Rang: Detektiv-Anwärter</div>
+
+      <div class="score-bar" aria-label="Punktebalken">
+        <div id="score-bar-fill"></div>
+      </div>
+
+      <div class="score-details" id="score-details"></div>
+      <p class="database-status" id="database-status">Ergebnis wird anonym in der Datenbank gespeichert ...</p>
+
+      <div class="score-actions">
+        <button id="show-final-btn" class="btn btn-primary">
+          Zur Abschlussseite
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+
   <section class="result-section hidden" id="result-section">
     <div class="result-card result-card-header">
       <img src="outro-nova-fixed.png" alt="Detektiv Nova nach der erfolgreich gelösten Mission" class="result-image result-header-image" onerror="this.style.display='none'" />
@@ -296,14 +323,12 @@
         <h4>Wo kannst du Fakten prüfen?</h4>
         <p>Hilfreiche Anlaufstellen sind zum Beispiel Correctiv, Mimikama und der ARD-Faktenfinder. Dort kannst du verdächtige Meldungen gegenchecken.</p>
       </div>
-      <p id="db-save-status" class="db-save-status">Dein Ergebnis wird anonym in der Datenbank gespeichert.</p>
       <div class="result-actions">
         <button onclick="window.print()" class="btn btn-secondary">Checkliste als PDF speichern</button>
         <button onclick="location.reload()" class="btn btn-primary">Zurück zum Start</button>
       </div>
     </div>
   </section>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
