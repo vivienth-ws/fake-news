@@ -1,3 +1,15 @@
+const SUPABASE_URL = "https://nyejprqlgzybrraudcz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_iOGy9PawDNtRKdKyAQRhhA_03YNGm4T";
+let supabaseClient = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } else {
+    console.warn("Supabase konnte nicht geladen werden.");
+  }
+});
+
 const akten = [
   {
     type: 'mc',
@@ -208,7 +220,6 @@ const akten = [
     learningTitle: 'Gelernt: Schutz beginnt mit einer Pause',
     learningText: 'Schon wenige Sekunden Nachdenken koennen verhindern, dass du auf eine Falschmeldung hereinfällst oder sie weiterverbreitest.'
   },
-,
   {
     type: 'imageCompare',
     title: 'Bildmanipulation: Vorher oder Nachher?',
@@ -314,15 +325,6 @@ const akten = [
   }
 ];
 
-// ------------------------------
-// Supabase Datenbank-Anbindung
-// ------------------------------
-const SUPABASE_URL = 'https://nyejprqlgzybrraudcz.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_iOGy9PawDNtRKdKyAQRhhA_03YNGm4T';
-const supabaseClient = window.supabase
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-  : null;
-
 const startBtn = document.getElementById('start-btn');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
@@ -351,19 +353,22 @@ const musicToggle = document.getElementById('music-toggle');
 const introVideoSection = document.getElementById('intro-video-section');
 const introVideo = document.getElementById('intro-video');
 const firstCaseBtn = document.getElementById('first-case-btn');
+const scoreOverviewSection = document.getElementById('score-overview-section');
+const scoreBig = document.getElementById('score-big');
+const scoreRank = document.getElementById('score-rank');
+const scoreBarFill = document.getElementById('score-bar-fill');
+const scoreDetails = document.getElementById('score-details');
+const databaseStatus = document.getElementById('database-status');
+const showFinalBtn = document.getElementById('show-final-btn');
 
 let currentAkte = 0;
 let quizAkten = [];
 const maxFaelleProRunde = 10;
 let musicRunning = false;
-
-let gameSessionId = null;
-let gameStartedAt = null;
-let answersLog = [];
-let answeredCaseKeys = new Set();
 let correctAnswers = 0;
 let wrongAnswers = 0;
-let resultAlreadySaved = false;
+let answerLog = [];
+let savedResultOnce = false;
 
 bgMusic.loop = true;
 
@@ -395,6 +400,14 @@ if (introVideo) {
   introVideo.addEventListener('ended', () => {
     firstCaseBtn.classList.add('pulse-ready');
     firstCaseBtn.focus();
+  });
+}
+
+if (showFinalBtn) {
+  showFinalBtn.addEventListener('click', () => {
+    scoreOverviewSection.classList.add('hidden');
+    resultSection.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
@@ -438,9 +451,7 @@ nextBtn.addEventListener('click', () => {
     setTimeout(() => {
       hero.classList.add('hidden');
       mainContainer.classList.add('hidden');
-      resultSection.classList.remove('hidden');
-      saveGameResult();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showScoreOverview();
     }, 250);
   }
 });
@@ -448,13 +459,10 @@ nextBtn.addEventListener('click', () => {
 
 function prepareRandomQuiz() {
   currentAkte = 0;
-  gameSessionId = createSessionId();
-  gameStartedAt = new Date();
-  answersLog = [];
-  answeredCaseKeys = new Set();
   correctAnswers = 0;
   wrongAnswers = 0;
-  resultAlreadySaved = false;
+  answerLog = [];
+  savedResultOnce = false;
 
   // Jede Spielrunde mischt die Akten neu. Wenn später weitere Fälle ergänzt werden,
   // werden automatisch nur 10 zufällige Fälle ausgewählt.
@@ -567,7 +575,7 @@ function renderMC(akte) {
         const correctButton = Array.from(buttons).find(btn => btn.textContent === akte.options.find(opt => opt.correct).text);
         if (correctButton) correctButton.classList.add('correct');
       }
-      recordAnswer(akte, option.correct, option.text);
+      recordCaseResult(akte, option.correct, option.text);
       showLearning(akte);
     });
     interactionContainer.appendChild(button);
@@ -576,6 +584,7 @@ function renderMC(akte) {
 
 function renderDragdrop(akte) {
   const list = document.createElement('div');
+  let dragdropHadWrongTry = false;
   list.className = 'interaction-container';
   const items = [...akte.items].sort(() => Math.random() - 0.5);
 
@@ -609,11 +618,12 @@ function renderDragdrop(akte) {
   checkBtn.addEventListener('click', () => {
     const current = Array.from(list.querySelectorAll('span')).map(el => el.textContent);
     if (JSON.stringify(current) === JSON.stringify(akte.correctOrder)) {
-      recordAnswer(akte, true, current);
+      recordCaseResult(akte, !dragdropHadWrongTry, dragdropHadWrongTry ? 'Reihenfolge nach Versuch korrigiert' : 'Reihenfolge direkt richtig');
       showLearning(akte);
       checkBtn.textContent = 'Richtig geloest';
       checkBtn.disabled = true;
     } else {
+      dragdropHadWrongTry = true;
       checkBtn.textContent = 'Noch nicht ganz - versuch es nochmal';
       setTimeout(() => { checkBtn.textContent = 'Reihenfolge pruefen'; }, 1600);
     }
@@ -673,7 +683,7 @@ function renderHotspot(akte) {
 
       if (found === akte.hotspots.length) {
         status.textContent = `Alle ${akte.hotspots.length} Hinweise gefunden`;
-        recordAnswer(akte, true, akte.hotspots.map(item => item.title));
+        recordCaseResult(akte, true, 'Alle Hinweise gefunden');
         showLearning(akte);
       }
     });
@@ -756,7 +766,7 @@ function renderFeedSelect(akte) {
             ? `Alle ${needed} Fake-Posts gefunden - schau dir die Hinweise nochmal genau an.`
             : `Perfekt: Alle ${needed} Fake-Posts gefunden.`;
         }
-        recordAnswer(akte, !clickedWrong, akte.posts.filter((_, idx) => phone.querySelectorAll('.feed-post')[idx].classList.contains('selected')).map(post => post.title));
+        recordCaseResult(akte, !clickedWrong, clickedWrong ? 'Fake-Posts gefunden, aber auch falschen Post markiert' : 'Fake-Posts direkt richtig erkannt');
         showLearning(akte);
       }
     });
@@ -782,7 +792,7 @@ function renderAmpel(akte) {
         const correct = Array.from(buttons).find(btn => btn.textContent === akte.choices.find(c => c.correct).label);
         if (correct) correct.classList.add('correct');
       }
-      recordAnswer(akte, choice.correct, choice.label);
+      recordCaseResult(akte, choice.correct, choice.label);
       showLearning(akte);
     });
     interactionContainer.appendChild(button);
@@ -790,93 +800,93 @@ function renderAmpel(akte) {
 }
 
 
-function createSessionId() {
-  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-    return window.crypto.randomUUID();
-  }
-  return 'session-' + Date.now() + '-' + Math.random().toString(16).slice(2);
-}
+function recordCaseResult(akte, isCorrect, selectedAnswer) {
+  const alreadyRecorded = answerLog.some(entry => entry.title === akte.title);
+  if (alreadyRecorded) return;
 
-function getCaseKey(akte) {
-  return `${currentAkte}-${akte.title}`;
-}
-
-function recordAnswer(akte, isCorrect, answerValue) {
-  const caseKey = getCaseKey(akte);
-  if (answeredCaseKeys.has(caseKey)) return;
-
-  answeredCaseKeys.add(caseKey);
   if (isCorrect) correctAnswers += 1;
   else wrongAnswers += 1;
 
-  answersLog.push({
-    case_number: currentAkte + 1,
+  answerLog.push({
     title: akte.title,
     type: akte.type,
-    correct: Boolean(isCorrect),
-    answer: answerValue
+    correct: isCorrect,
+    selected_answer: selectedAnswer || null
   });
 }
 
 function calculateRank(scorePercent) {
-  if (scorePercent >= 90) return 'Meister-Detektiv';
-  if (scorePercent >= 75) return 'Profi-Ermittler';
-  if (scorePercent >= 50) return 'Spurensucher';
-  return 'Nachwuchs-Detektiv';
+  if (scorePercent >= 90) return "Meister-Detektiv";
+  if (scorePercent >= 75) return "Profi-Ermittler";
+  if (scorePercent >= 50) return "Spurensucher";
+  return "Detektiv-Anwärter";
 }
 
 async function saveGameResult() {
-  if (resultAlreadySaved) return;
-  resultAlreadySaved = true;
+  if (savedResultOnce) return;
+  savedResultOnce = true;
 
-  const statusEl = document.getElementById('db-save-status');
   const totalCases = quizAkten.length;
   const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
   const rank = calculateRank(scorePercent);
 
-  const resultData = {
-    session_id: gameSessionId || createSessionId(),
+  if (!supabaseClient) {
+    if (databaseStatus) databaseStatus.textContent = "Datenbank nicht verbunden. Prüfe die Supabase-Einbindung.";
+    console.warn("Supabase Client fehlt.");
+    return;
+  }
+
+  const payload = {
+    session_id: crypto.randomUUID(),
     finished_at: new Date().toISOString(),
     total_cases: totalCases,
     correct_answers: correctAnswers,
     wrong_answers: wrongAnswers,
     score_percent: scorePercent,
     rank: rank,
-    played_cases: quizAkten.map((akte, index) => ({
-      case_number: index + 1,
-      title: akte.title,
-      type: akte.type
-    })),
-    answers: answersLog
+    played_cases: quizAkten.map(akte => akte.title),
+    answers: answerLog
   };
 
-  if (!supabaseClient) {
-    if (statusEl) {
-      statusEl.textContent = 'Datenbank nicht verbunden: Ergebnis konnte lokal gespielt, aber nicht gespeichert werden.';
-      statusEl.classList.add('error');
-    }
+  const { error } = await supabaseClient
+    .from("game_results")
+    .insert([payload]);
+
+  if (error) {
+    console.error("Supabase Speicherfehler:", error);
+    if (databaseStatus) databaseStatus.textContent = "Ergebnis konnte nicht gespeichert werden. Prüfe Supabase/Console.";
     return;
   }
 
-  try {
-    const { error } = await supabaseClient
-      .from('game_results')
-      .insert([resultData]);
-
-    if (error) throw error;
-
-    if (statusEl) {
-      statusEl.textContent = `Ergebnis anonym gespeichert: ${correctAnswers}/${totalCases} richtig · ${scorePercent}% · Rang: ${rank}`;
-      statusEl.classList.add('success');
-    }
-  } catch (error) {
-    console.error('Supabase Speicherfehler:', error);
-    if (statusEl) {
-      statusEl.textContent = 'Ergebnis konnte nicht gespeichert werden. Prüfe Supabase-Tabelle, Key und RLS-Einstellungen.';
-      statusEl.classList.add('error');
-    }
-  }
+  if (databaseStatus) databaseStatus.textContent = "Ergebnis wurde anonym in Supabase gespeichert.";
 }
+
+function showScoreOverview() {
+  const totalCases = quizAkten.length;
+  const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
+  const rank = calculateRank(scorePercent);
+
+  if (scoreBig) scoreBig.textContent = `${correctAnswers} / ${totalCases} richtig`;
+  if (scoreRank) scoreRank.textContent = `Rang: ${rank}`;
+  if (scoreBarFill) scoreBarFill.style.width = `${scorePercent}%`;
+
+  if (scoreDetails) {
+    scoreDetails.innerHTML = answerLog.map((entry, index) => `
+      <div class="score-detail-item ${entry.correct ? 'is-correct' : 'is-wrong'}">
+        <span>${index + 1}</span>
+        <strong>${entry.title}</strong>
+        <em>${entry.correct ? 'richtig' : 'nicht ganz richtig'}</em>
+      </div>
+    `).join('');
+  }
+
+  if (databaseStatus) databaseStatus.textContent = "Ergebnis wird anonym in der Datenbank gespeichert ...";
+
+  scoreOverviewSection.classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  saveGameResult();
+}
+
 
 function showLearning(akte) {
   learningTitle.textContent = akte.learningTitle;
