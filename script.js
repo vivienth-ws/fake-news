@@ -454,6 +454,7 @@ let musicRunning = false;
 let correctAnswers = 0;
 let wrongAnswers = 0;
 let answerLog = [];
+let savedResultOnce = false;
 
 bgMusic.loop = true;
 
@@ -539,6 +540,7 @@ async function prepareRandomQuiz() {
   correctAnswers = 0;
   wrongAnswers = 0;
   answerLog = [];
+  savedResultOnce = false;
 
   const loadedAkten = await loadAktenFromDatabase();
 
@@ -761,6 +763,9 @@ function renderHotspot(akte) {
       if (found === akte.hotspots.length) {
         status.textContent = `Alle ${akte.hotspots.length} Hinweise gefunden`;
         recordCaseResult(akte, true, 'Alle Hinweise gefunden');
+        if (akte.type === 'feedSelect') {
+          recordCaseResult(akte, !clickedWrong, clickedWrong ? 'Fake-Posts gefunden, aber auch falschen Post markiert' : 'Fake-Posts richtig erkannt');
+        }
         showLearning(akte);
       }
     });
@@ -843,7 +848,6 @@ function renderFeedSelect(akte) {
             ? `Alle ${needed} Fake-Posts gefunden - schau dir die Hinweise nochmal genau an.`
             : `Perfekt: Alle ${needed} Fake-Posts gefunden.`;
         }
-        recordCaseResult(akte, !clickedWrong, clickedWrong ? 'Fake-Posts gefunden, aber auch falschen Post markiert' : 'Fake-Posts richtig erkannt');
         showLearning(akte);
       }
     });
@@ -899,6 +903,43 @@ function calculateRank(scorePercent) {
   return "Detektiv-Anwärter";
 }
 
+async function saveGameResult() {
+  if (savedResultOnce) return;
+  savedResultOnce = true;
+
+  const client = getSupabaseClient();
+  const totalCases = quizAkten.length;
+  const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
+  const rank = calculateRank(scorePercent);
+
+  if (!client) {
+    if (databaseStatus) databaseStatus.textContent = "Datenbank nicht verbunden. Ergebnis nur lokal angezeigt.";
+    return;
+  }
+
+  const { error } = await client
+    .from("game_results")
+    .insert([{
+      session_id: crypto.randomUUID(),
+      finished_at: new Date().toISOString(),
+      total_cases: totalCases,
+      correct_answers: correctAnswers,
+      wrong_answers: wrongAnswers,
+      score_percent: scorePercent,
+      rank: rank,
+      played_cases: quizAkten.map(akte => akte.title),
+      answers: answerLog
+    }]);
+
+  if (error) {
+    console.error("Supabase Speicherfehler:", error);
+    if (databaseStatus) databaseStatus.textContent = "Ergebnis konnte nicht gespeichert werden. Prüfe game_results und RLS-Policy.";
+    return;
+  }
+
+  if (databaseStatus) databaseStatus.textContent = "Ergebnis wurde anonym in Supabase gespeichert.";
+}
+
 function showScoreOverview() {
   const totalCases = quizAkten.length;
   const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
@@ -918,7 +959,7 @@ function showScoreOverview() {
     `).join('');
   }
 
-  if (databaseStatus) databaseStatus.textContent = "Die Fragen wurden aus Supabase geladen. Dein Ergebnis wird nur angezeigt und nicht gespeichert.";
+  if (databaseStatus) { databaseStatus.textContent = ""; databaseStatus.style.display = "none"; }
 
   if (scoreOverviewSection) {
     scoreOverviewSection.classList.remove('hidden');
@@ -927,6 +968,7 @@ function showScoreOverview() {
     resultSection.classList.remove('hidden');
   }
 
+  saveGameResult();
 }
 
 
