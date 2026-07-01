@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://nyejprqlgzybrraudcz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iOGy9PawDNtRKdKyAQRhhA_03YNGm4T";
 let supabaseClient = null;
 
-// Notfall-Version: Wenn Supabase nicht lädt, funktioniert das Spiel trotzdem lokal.
+// Fallback: Falls Supabase nicht lädt, funktioniert das Spiel trotzdem lokal.
 const fallbackAkten = [
   {
     "type": "mc",
@@ -343,16 +343,12 @@ function parseCorrectLetter(letter) {
 }
 
 function dbRowToAkte(row) {
-  // Spezial-Fälle behalten ihre Interaktionen aus der Fallback-Version.
-  // Die sichtbaren Inhalte kommen trotzdem aus der Datenbank.
   const fallback = fallbackAkten.find(a => a.title === row.titel) || fallbackAkten.find(a => a.id === row.id) || {};
-
   const typ = row.typ || fallback.type || "mc";
   const answers = [row.antwort_a, row.antwort_b, row.antwort_c, row.antwort_d]
     .filter(answer => answer !== null && answer !== undefined && String(answer).trim() !== "");
 
   let akte = { ...fallback };
-
   akte.id = row.id;
   akte.title = row.titel || fallback.title;
   akte.type = typ;
@@ -375,7 +371,9 @@ function dbRowToAkte(row) {
     akte.choices = answers.map((text, index) => ({
       label: text,
       color: index === 0 ? "green" : index === 1 ? "yellow" : "red",
-      correct: String(row.richtige_antwort || "").toLowerCase().includes(text.toLowerCase()) || String(row.richtige_antwort || "").toUpperCase().startsWith(["A","B","C","D"][index])
+      correct:
+        String(row.richtige_antwort || "").toLowerCase().includes(String(text).toLowerCase()) ||
+        String(row.richtige_antwort || "").toUpperCase().startsWith(["A", "B", "C", "D"][index])
     }));
   }
 
@@ -439,13 +437,6 @@ const musicToggle = document.getElementById('music-toggle');
 const introVideoSection = document.getElementById('intro-video-section');
 const introVideo = document.getElementById('intro-video');
 const firstCaseBtn = document.getElementById('first-case-btn');
-const scoreOverviewSection = document.getElementById('score-overview-section');
-const scoreBig = document.getElementById('score-big');
-const scoreRank = document.getElementById('score-rank');
-const scoreBarFill = document.getElementById('score-bar-fill');
-const scoreDetails = document.getElementById('score-details');
-const databaseStatus = document.getElementById('database-status');
-const showFinalBtn = document.getElementById('show-final-btn');
 
 let currentAkte = 0;
 let quizAkten = [];
@@ -454,7 +445,6 @@ let musicRunning = false;
 let correctAnswers = 0;
 let wrongAnswers = 0;
 let answerLog = [];
-let savedResultOnce = false;
 
 bgMusic.loop = true;
 
@@ -529,7 +519,8 @@ nextBtn.addEventListener('click', () => {
     setTimeout(() => {
       hero.classList.add('hidden');
       mainContainer.classList.add('hidden');
-      showScoreOverview();
+      resultSection.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 250);
   }
 });
@@ -540,11 +531,10 @@ async function prepareRandomQuiz() {
   correctAnswers = 0;
   wrongAnswers = 0;
   answerLog = [];
-  savedResultOnce = false;
 
   const loadedAkten = await loadAktenFromDatabase();
 
-  // Aus der Supabase-Tabelle quiz_cases werden zufällig 10 Akten gezogen.
+  // Aus Supabase werden zufällig 10 Akten gezogen.
   quizAkten = shuffleArray(loadedAkten).slice(0, Math.min(maxFaelleProRunde, loadedAkten.length));
 }
 
@@ -654,7 +644,6 @@ function renderMC(akte) {
         const correctButton = Array.from(buttons).find(btn => btn.textContent === akte.options.find(opt => opt.correct).text);
         if (correctButton) correctButton.classList.add('correct');
       }
-      recordCaseResult(akte, option.correct, option.text);
       showLearning(akte);
     });
     interactionContainer.appendChild(button);
@@ -663,7 +652,6 @@ function renderMC(akte) {
 
 function renderDragdrop(akte) {
   const list = document.createElement('div');
-  let dragdropHadWrongTry = false;
   list.className = 'interaction-container';
   const items = [...akte.items].sort(() => Math.random() - 0.5);
 
@@ -697,12 +685,10 @@ function renderDragdrop(akte) {
   checkBtn.addEventListener('click', () => {
     const current = Array.from(list.querySelectorAll('span')).map(el => el.textContent);
     if (JSON.stringify(current) === JSON.stringify(akte.correctOrder)) {
-      recordCaseResult(akte, !dragdropHadWrongTry, dragdropHadWrongTry ? 'Reihenfolge korrigiert' : 'Reihenfolge direkt richtig');
       showLearning(akte);
       checkBtn.textContent = 'Richtig geloest';
       checkBtn.disabled = true;
     } else {
-      dragdropHadWrongTry = true;
       checkBtn.textContent = 'Noch nicht ganz - versuch es nochmal';
       setTimeout(() => { checkBtn.textContent = 'Reihenfolge pruefen'; }, 1600);
     }
@@ -762,10 +748,6 @@ function renderHotspot(akte) {
 
       if (found === akte.hotspots.length) {
         status.textContent = `Alle ${akte.hotspots.length} Hinweise gefunden`;
-        recordCaseResult(akte, true, 'Alle Hinweise gefunden');
-        if (akte.type === 'feedSelect') {
-          recordCaseResult(akte, !clickedWrong, clickedWrong ? 'Fake-Posts gefunden, aber auch falschen Post markiert' : 'Fake-Posts richtig erkannt');
-        }
         showLearning(akte);
       }
     });
@@ -873,7 +855,6 @@ function renderAmpel(akte) {
         const correct = Array.from(buttons).find(btn => btn.textContent === akte.choices.find(c => c.correct).label);
         if (correct) correct.classList.add('correct');
       }
-      recordCaseResult(akte, choice.correct, choice.label);
       showLearning(akte);
     });
     interactionContainer.appendChild(button);
@@ -903,43 +884,6 @@ function calculateRank(scorePercent) {
   return "Detektiv-Anwärter";
 }
 
-async function saveGameResult() {
-  if (savedResultOnce) return;
-  savedResultOnce = true;
-
-  const client = getSupabaseClient();
-  const totalCases = quizAkten.length;
-  const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
-  const rank = calculateRank(scorePercent);
-
-  if (!client) {
-    if (databaseStatus) databaseStatus.textContent = "Datenbank nicht verbunden. Ergebnis nur lokal angezeigt.";
-    return;
-  }
-
-  const { error } = await client
-    .from("game_results")
-    .insert([{
-      session_id: crypto.randomUUID(),
-      finished_at: new Date().toISOString(),
-      total_cases: totalCases,
-      correct_answers: correctAnswers,
-      wrong_answers: wrongAnswers,
-      score_percent: scorePercent,
-      rank: rank,
-      played_cases: quizAkten.map(akte => akte.title),
-      answers: answerLog
-    }]);
-
-  if (error) {
-    console.error("Supabase Speicherfehler:", error);
-    if (databaseStatus) databaseStatus.textContent = "Ergebnis konnte nicht gespeichert werden. Prüfe game_results und RLS-Policy.";
-    return;
-  }
-
-  if (databaseStatus) databaseStatus.textContent = "Ergebnis wurde anonym in Supabase gespeichert.";
-}
-
 function showScoreOverview() {
   const totalCases = quizAkten.length;
   const scorePercent = totalCases > 0 ? Math.round((correctAnswers / totalCases) * 100) : 0;
@@ -959,7 +903,9 @@ function showScoreOverview() {
     `).join('');
   }
 
-  if (databaseStatus) databaseStatus.textContent = "Ergebnis wird anonym in Supabase gespeichert ...";
+  if (databaseStatus) {
+    databaseStatus.textContent = "Die Fragen wurden aus Supabase geladen. Dein Ergebnis wird nur angezeigt und nicht gespeichert.";
+  }
 
   if (scoreOverviewSection) {
     scoreOverviewSection.classList.remove('hidden');
@@ -967,8 +913,6 @@ function showScoreOverview() {
   } else {
     resultSection.classList.remove('hidden');
   }
-
-  saveGameResult();
 }
 
 
@@ -977,12 +921,4 @@ function showLearning(akte) {
   learningText.textContent = akte.learningText;
   learningBlock.classList.remove('hidden');
   learningBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-if (showFinalBtn) {
-  showFinalBtn.addEventListener('click', () => {
-    if (scoreOverviewSection) scoreOverviewSection.classList.add('hidden');
-    resultSection.classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
 }
